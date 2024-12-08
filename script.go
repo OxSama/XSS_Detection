@@ -10,7 +10,6 @@ import (
 	"strings"
 )
 
-// Configuration for XSS detection
 type Config struct {
 	PayloadPatterns []string `json:"payload_patterns"`
 }
@@ -20,16 +19,13 @@ var (
 	logger      *log.Logger
 )
 
-// Initialize logging and XSS patterns
 func init() {
-	// Setup logging
 	logFile, err := os.OpenFile("xss_logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatalf("Failed to open log file: %v", err)
 	}
 	logger = log.New(logFile, "XSS DETECTION: ", log.LstdFlags)
 
-	// Default XSS payload patterns
 	defaultPatterns := []string{
 		`<script>.*</script>`,   // Inline script tags
 		`javascript:.*`,         // Inline JavaScript
@@ -46,7 +42,6 @@ func init() {
 	}
 }
 
-// Load custom patterns from a JSON file
 func loadConfig(filename string) Config {
 	var config Config
 	file, err := os.Open(filename)
@@ -63,7 +58,6 @@ func loadConfig(filename string) Config {
 	return config
 }
 
-// Detect XSS payloads in user input
 func detectXSS(input string) bool {
 	for _, pattern := range xssPatterns {
 		if pattern.MatchString(strings.ToLower(input)) {
@@ -73,11 +67,9 @@ func detectXSS(input string) bool {
 	return false
 }
 
-// Handle requests and validate user input
 func handler(w http.ResponseWriter, r *http.Request) {
 	var detected bool
 
-	// Parse GET parameters
 	for key, values := range r.URL.Query() {
 		for _, value := range values {
 			if detectXSS(value) {
@@ -86,8 +78,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-
-	// Parse POST parameters
 	if r.Method == http.MethodPost {
 		if err := r.ParseForm(); err != nil {
 			http.Error(w, "Failed to parse POST data", http.StatusBadRequest)
@@ -103,7 +93,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Respond based on detection results
 	if detected {
 		http.Error(w, "XSS payload detected", http.StatusBadRequest)
 	} else {
