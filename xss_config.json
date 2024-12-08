@@ -1,0 +1,6 @@
+{
+  "payload_patterns": [
+    "<svg.*onload=.*>",
+    "<div.*onmouseover=.*>"
+  ]
+}

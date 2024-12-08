@@ -1,0 +1,3 @@
+XSS DETECTION: 2024/12/08 17:17:54 Detected XSS payload in GET parameter 'name': <script>alert('XSS')</script>
+XSS DETECTION: 2024/12/08 17:19:21 Detected XSS payload in GET parameter 'input': <script>alert('XSS')</script>
+XSS DETECTION: 2024/12/08 17:20:02 Detected XSS payload in POST parameter 'username': <img src='x' onerror='alert(1)'>
