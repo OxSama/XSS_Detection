@@ -31,6 +31,7 @@ func init() {
 		`javascript:.*`,         // Inline JavaScript
 		`<img\s+.*onerror=.*>`,  // Malicious image onerror handlers
 		`<iframe.*>.*</iframe>`, // Embedded iframes
+		`(?i)<.*on\w+\s*=.*>`,
 	}
 	for _, pattern := range defaultPatterns {
 		xssPatterns = append(xssPatterns, regexp.MustCompile(pattern))
