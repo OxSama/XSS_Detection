@@ -8,6 +8,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type Config struct {
@@ -24,7 +25,7 @@ func init() {
 	if err != nil {
 		log.Fatalf("Failed to open log file: %v", err)
 	}
-	logger = log.New(logFile, "XSS DETECTION: ", log.LstdFlags)
+	logger = log.New(logFile, "XSS DETECTION: ", log.LstdFlags|log.LUTC|log.Lmicroseconds)
 
 	defaultPatterns := []string{
 		`<script>.*</script>`,   // Inline script tags
@@ -68,17 +69,34 @@ func detectXSS(input string) bool {
 	return false
 }
 
+func logRequestDetails(r *http.Request, detected bool, paramName, payload string) {
+	timestamp := time.Now().UTC().Format(time.RFC3339)
+	ipAddress := r.RemoteAddr
+	userAgent := r.UserAgent()
+
+	status := "SAFE"
+	if detected {
+		status = "XSS DETECTED"
+	}
+
+	logger.Printf("[%s] Status: %s | IP: %s | User-Agent: %s | Param: %s | Payload: %s\n",
+		timestamp, status, ipAddress, userAgent, paramName, payload)
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	var detected bool
 
+	// Check GET parameters
 	for key, values := range r.URL.Query() {
 		for _, value := range values {
 			if detectXSS(value) {
-				logger.Printf("Detected XSS payload in GET parameter '%s': %s", key, value)
 				detected = true
+				logRequestDetails(r, detected, key, value)
 			}
 		}
 	}
+
+	// Check POST parameters
 	if r.Method == http.MethodPost {
 		if err := r.ParseForm(); err != nil {
 			http.Error(w, "Failed to parse POST data", http.StatusBadRequest)
@@ -87,16 +105,18 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		for key, values := range r.PostForm {
 			for _, value := range values {
 				if detectXSS(value) {
-					logger.Printf("Detected XSS payload in POST parameter '%s': %s", key, value)
 					detected = true
+					logRequestDetails(r, detected, key, value)
 				}
 			}
 		}
 	}
 
+	// Respond to the client
 	if detected {
 		http.Error(w, "XSS payload detected", http.StatusBadRequest)
 	} else {
+		logRequestDetails(r, detected, "-", "-")
 		fmt.Fprintln(w, "Input validated successfully")
 	}
 }
